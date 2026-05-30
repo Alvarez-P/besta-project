@@ -21,7 +21,7 @@ export const handler = async (event: APIGatewayProxyEvent, context: Context): Pr
         binarySettings: {
           contentTypes: ['text/html', 'text/css', 'application/javascript', 'image/png', 'image/svg+xml', 'font/woff2'],
         },
-      }).handler;
+      });
     }
 
     return (await cachedHandler(event, context, undefined as any)) as APIGatewayProxyResult;

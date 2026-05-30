@@ -40,8 +40,15 @@ export async function initSequelize(): Promise<Sequelize> {
   initUserModel(sequelize);
 
   await sequelize.authenticate();
+  console.log('Database connection established');
 
-  await sequelize.sync({ alter: true });
+  try {
+    await sequelize.sync({ alter: true });
+    console.log('Database schema synchronized');
+  } catch (error) {
+    console.error('Failed to synchronize database schema:', error);
+    throw error;
+  }
 
   return sequelize;
 }
