@@ -1,8 +1,8 @@
-@baseUrl = http://localhost:3000
-#@baseUrl = https://your-api-gateway-id.execute-api.us-east-1.amazonaws.com/prod
+# @baseUrl = http://localhost:3000
+@baseUrl = https://7pavf4fcjk.execute-api.us-east-1.amazonaws.com/prod
 
 # ─── Variables ───────────────────────────────────
-@token = {{login.response.body.data.token}}
+@token = {{login.response.body.data.access_token}}
 @userId = {{createUser.response.body.data.id}}
 
 ### ─── Health ─────────────────────────────────────
