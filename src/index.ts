@@ -19,7 +19,7 @@ export const handler = async (event: APIGatewayProxyEvent, context: Context): Pr
       cachedHandler = serverlessExpress({
         app,
         binarySettings: {
-          contentTypes: ['text/html', 'text/css', 'application/javascript', 'image/png', 'image/svg+xml', 'font/woff2'],
+          contentTypes: ['text/html', 'text/css', 'application/javascript', 'image/png', 'image/svg+xml'],
         },
       });
     }
