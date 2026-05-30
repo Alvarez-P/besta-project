@@ -1,28 +1,38 @@
 import { GetSecretValueCommand, SecretsManagerClient } from '@aws-sdk/client-secrets-manager';
 
-export interface JwtSecretConfig {
-  jwtSecret: string;
-}
-
 let cachedSecret: string | null = null;
 
 export async function getJwtSecret(): Promise<string> {
   if (cachedSecret) return cachedSecret;
 
-  const client = new SecretsManagerClient({});
-  const secretArn = process.env.DB_SECRET_ARN;
-
-  if (!secretArn) {
-    throw new Error('DB_SECRET_ARN environment variable is not set');
+  const envSecret = process.env.JWT_SECRET;
+  if (envSecret) {
+    cachedSecret = envSecret;
+    return cachedSecret;
   }
 
-  const response = await client.send(new GetSecretValueCommand({ SecretId: secretArn }));
-  const secret = JSON.parse(response.SecretString!) as JwtSecretConfig;
+  const client = new SecretsManagerClient({});
+  const jwtSecretArn = process.env.JWT_SECRET_ARN;
+
+  if (jwtSecretArn) {
+    const response = await client.send(new GetSecretValueCommand({ SecretId: jwtSecretArn }));
+    const secret = JSON.parse(response.SecretString!);
+    cachedSecret = (secret.jwtSecret ?? secret.password ?? secret.JWT_SECRET ?? JSON.stringify(secret)) as string;
+    return cachedSecret;
+  }
+
+  const dbSecretArn = process.env.DB_SECRET_ARN;
+  if (!dbSecretArn) {
+    throw new Error('JWT_SECRET, JWT_SECRET_ARN, or DB_SECRET_ARN is required');
+  }
+
+  const response = await client.send(new GetSecretValueCommand({ SecretId: dbSecretArn }));
+  const secret = JSON.parse(response.SecretString!);
 
   if (!secret.jwtSecret) {
-    throw new Error('jwtSecret not found in Secrets Manager secret');
+    throw new Error('jwtSecret not found in Secrets Manager secret. Add it manually or set JWT_SECRET env var.');
   }
 
-  cachedSecret = secret.jwtSecret;
+  cachedSecret = secret.jwtSecret as string;
   return cachedSecret;
 }

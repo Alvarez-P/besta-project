@@ -6,6 +6,7 @@ import * as iam from 'aws-cdk-lib/aws-iam';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import * as rds from 'aws-cdk-lib/aws-rds';
+import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
 import * as ses from 'aws-cdk-lib/aws-ses';
 
 export class BestaStack extends cdk.Stack {
@@ -79,6 +80,14 @@ export class BestaStack extends cdk.Stack {
 
     rdsInstance.secret?.grantRead(lambdaRole);
 
+    const jwtSecret = new secretsmanager.Secret(this, 'JwtSecret', {
+      generateSecretString: {
+        passwordLength: 32,
+        excludePunctuation: true,
+      },
+    });
+    jwtSecret.grantRead(lambdaRole);
+
     lambdaRole.addToPolicy(
       new iam.PolicyStatement({
         actions: ['ses:SendEmail', 'ses:SendRawEmail'],
@@ -93,8 +102,9 @@ export class BestaStack extends cdk.Stack {
     const environment: Record<string, string> = {
       DB_NAME: 'besta',
       DB_SECRET_ARN: rdsInstance.secret?.secretArn || '',
+      JWT_SECRET_ARN: jwtSecret.secretArn,
       NODE_ENV: env,
-      SES_FROM_EMAIL: 'besta-test@mailinator.com',
+      SES_FROM_EMAIL: 'alvarez.p.esteban@gmail.com',
     };
     const apiLambda = new NodejsFunction(this, 'ApiLambda', {
       entry: path.join(process.cwd(), 'src', 'index.ts'),
