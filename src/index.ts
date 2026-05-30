@@ -27,7 +27,6 @@ export const handler = async (event: APIGatewayProxyEvent, context: Context): Pr
     return (await cachedHandler(event, context, undefined as any)) as APIGatewayProxyResult;
   } catch (error) {
     console.error('Lambda handler error:', error);
-    const message = error instanceof Error ? error.message : 'Internal server error';
-    return errorResponse(500, message);
+    return errorResponse(500, 'Internal server error');
   }
 };
