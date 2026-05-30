@@ -16,9 +16,9 @@ export async function createApp(): Promise<express.Application> {
 
   app.use(express.json());
 
-  app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDefinition));
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDefinition));
 
-  app.get('/docs.json', (_req, res) => {
+  app.get('/api-docs.json', (_req, res) => {
     res.json(swaggerDefinition);
   });
 
