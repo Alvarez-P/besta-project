@@ -1,0 +1,70 @@
+@baseUrl = http://localhost:3000
+#@baseUrl = https://your-api-gateway-id.execute-api.us-east-1.amazonaws.com/prod
+
+# ─── Variables ───────────────────────────────────
+@token = {{login.response.body.data.token}}
+@userId = {{createUser.response.body.data.id}}
+
+### ─── Health ─────────────────────────────────────
+GET {{baseUrl}}/health
+
+### ─── Auth: Login ────────────────────────────────
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "securePass123"
+}
+
+### ─── Users: Create (register) ───────────────────
+# @name createUser
+POST {{baseUrl}}/users
+Content-Type: application/json
+
+{
+  "name": "John Doe",
+  "email": "user@example.com",
+  "password": "securePass123"
+}
+
+### ─── Users: List (paginated) ───────────────────
+GET {{baseUrl}}/users?page=1&limit=20
+Authorization: Bearer {{token}}
+
+### ─── Users: List (filter by name) ──────────────
+GET {{baseUrl}}/users?name=John&page=1&limit=10
+Authorization: Bearer {{token}}
+
+### ─── Users: Get by ID ──────────────────────────
+GET {{baseUrl}}/users/{{userId}}
+Authorization: Bearer {{token}}
+
+### ─── Users: Update ─────────────────────────────
+PUT {{baseUrl}}/users/{{userId}}
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Jane Doe"
+}
+
+### ─── Users: Change password ────────────────────
+PUT {{baseUrl}}/users/{{userId}}
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "password": "newSecurePass456"
+}
+
+### ─── Users: Delete ─────────────────────────────
+DELETE {{baseUrl}}/users/{{userId}}
+Authorization: Bearer {{token}}
+
+### ─── Swagger UI ────────────────────────────────
+GET {{baseUrl}}/api-docs
+
+### ─── Swagger JSON ──────────────────────────────
+GET {{baseUrl}}/api-docs.json
