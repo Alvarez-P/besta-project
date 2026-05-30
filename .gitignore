@@ -1,0 +1,12 @@
+node_modules/
+cdk.out/
+dist/
+dist-lambda/
+.env
+.env.*
+*.log
+*.tsbuildinfo
+coverage/
+.DS_Store
+*.swp
+*.swo
