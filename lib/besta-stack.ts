@@ -110,6 +110,7 @@ export class BestaStack extends cdk.Stack {
       bundling: {
         minify: true,
         sourceMap: true,
+        externalModules: ['pg-hstore'],
         nodeModules: ['swagger-ui-express', 'swagger-ui-dist'],
       },
     });
