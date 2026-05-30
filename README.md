@@ -1,128 +1,134 @@
 # Besta Project
 
-Serverless REST API built with **AWS CDK**, **Express.js**, and **MySQL**, following Domain-Driven Design (DDD) and Clean Architecture principles. Deployable to AWS Lambda via API Gateway.
+API REST serverless construida con **AWS CDK**, **Express.js** y **MySQL**, siguiendo Domain-Driven Design (DDD) y Clean Architecture. Desplegable en AWS Lambda a través de API Gateway.
 
-## Tech Stack
+## Stack Tecnológico
 
-| Layer | Technology |
-|-------|-----------|
+| Capa | Tecnología |
+|------|-----------|
 | Runtime | Node.js 20.x (Lambda) |
-| Framework | Express.js via `@vendia/serverless-express` |
+| Framework | Express.js vía `@vendia/serverless-express` |
 | ORM | Sequelize 6 + MySQL 8.0 |
-| Infrastructure | AWS CDK v2 (TypeScript) |
-| Database | Amazon RDS MySQL (VPC) |
-| Auth | JWT (HMAC-SHA256, `node:crypto`) |
-| Validation | Zod |
-| Docs | OpenAPI 3.0 + Swagger UI |
-| Tooling | Biome, Husky, lint-staged |
+| Infraestructura | AWS CDK v2 (TypeScript) |
+| Base de datos | Amazon RDS MySQL (VPC) |
+| Autenticación | JWT (HMAC-SHA256, `node:crypto`) |
+| Validación | Zod |
+| Documentación | OpenAPI 3.0 + Swagger UI |
+| Herramientas | Biome, Husky, lint-staged |
 
-## Architecture
+## Arquitectura
 
 ```
 API Gateway (REST, proxy)
 └── Lambda (Express + serverless-express)
-    ├── POST   /auth/login       (public)
-    ├── POST   /users            (public)
-    ├── GET    /users            (auth)
-    ├── GET    /users/:id        (auth)
-    ├── PUT    /users/:id        (auth)
-    ├── DELETE /users/:id        (auth)
-    ├── GET    /health           (public)
-    └── GET    /api-docs         (public, Swagger UI)
+    ├── POST   /auth/login       (público)
+    ├── POST   /users            (público)
+    ├── GET    /users            (autenticado)
+    ├── GET    /users/:id        (autenticado)
+    ├── PUT    /users/:id        (autenticado)
+    ├── DELETE /users/:id        (autenticado)
+    ├── GET    /health           (público)
+    └── GET    /api-docs         (público, Swagger UI)
 ```
 
 ```
 src/
 ├── context/
-│   ├── auth/       # Login + JWT generation
-│   ├── user/       # CRUD (aggregate, VO, domain service, use cases)
+│   ├── auth/       # Login y generación de JWT
+│   ├── user/       # CRUD (aggregate, VO, domain service, casos de uso)
 │   └── health/     # Health check
 ├── shared/
 │   ├── infrastructure/
 │   │   ├── crypto/        # PasswordService, JwtService
-│   │   ├── database/      # Sequelize init, BaseRepository, UnitOfWork
-│   │   ├── errors/        # BaseError + HTTP error classes
-│   │   ├── mail/          # SES adapter + notifications
+│   │   ├── database/      # Inicialización de Sequelize, BaseRepository, UnitOfWork
+│   │   ├── errors/        # BaseError + clases de error HTTP
+│   │   ├── mail/          # Adaptador SES + notificaciones
 │   │   ├── middleware/     # validate (Zod), error-handler, auth-guard
-│   │   ├── swagger/       # OpenAPI 3.0 definition
-│   │   └── response.ts    # Success/paginated/error response helpers
+│   │   ├── swagger/       # Definición OpenAPI 3.0
+│   │   └── response.ts    # Helpers de respuesta (success, paginated)
 │   └── domain/
 │       └── repository.interface.ts
-├── index.ts        # Lambda handler
-└── server.ts       # Express app factory
+├── index.ts        # Handler de Lambda
+└── server.ts       # Fábrica de la aplicación Express
 ```
 
-## Prerequisites
+## Requisitos Previos
 
-- **Node.js 20** (use `nvm use` to auto-switch via `.nvmrc`)
-- **AWS CLI** configured (`aws configure`)
-- **AWS CDK** bootstrapped in your account/region (`cdk bootstrap`)
-- **Git 2.32+** (for lint-staged hooks)
+- **Node.js 20** (`nvm use` cambia automáticamente vía `.nvmrc`)
+- **AWS CLI** configurado (`aws configure`)
+- **AWS CDK** bootstrapped en tu cuenta/región (`cdk bootstrap`)
+- **Git 2.32+** (para los hooks de lint-staged)
 
-## Setup
+## Configuración Inicial
 
 ```bash
-# 1. Clone and install
+# 1. Clonar e instalar
 git clone <repo-url>
 cd besta-project
 npm install
 
-# 2. Set Node version
+# 2. Usar la versión de Node del proyecto
 nvm use
 
-# 3. Configure AWS credentials
+# 3. Configurar credenciales de AWS
 aws configure
 ```
 
-## Environment Variables
+## Variables de Entorno
 
-| Variable | Source | Description |
+| Variable | Origen | Descripción |
 |----------|--------|-------------|
-| `DB_NAME` | CDK stack | Database name (`besta`) |
-| `DB_SECRET_ARN` | CDK stack | Secrets Manager ARN for RDS credentials |
-| `SES_FROM_EMAIL` | CDK stack | Verified SES sender email |
+| `DB_NAME` | CDK stack | Nombre de la base de datos (`besta`) |
+| `DB_SECRET_ARN` | CDK stack | ARN del secreto en Secrets Manager con credenciales RDS |
+| `SES_FROM_EMAIL` | CDK stack | Email verificado en SES para envío de correos |
 | `NODE_ENV` | CDK context | `dev`, `qa`, `prod` |
 
-The **JWT secret** is stored in the same Secrets Manager secret as the RDS credentials (field `jwtSecret`).
+El **secreto JWT** se almacena en el mismo secreto de Secrets Manager que las credenciales de RDS (campo `jwtSecret`).
 
-## Deploy
+## Despliegue
 
 ```bash
-# Manual deploy (specify environment via context)
+# Despliegue manual (especificar entorno vía contexto)
 npm run cdk -- deploy --context environment=dev
 
-# Or use npm scripts
+# O usando los scripts npm
 npm run deploy -- --context environment=dev
 
-# CI/CD: push to qa branch triggers automatic deploy
-# (see .github/workflows/deploy-qa.yml)
+# CI/CD: hacer push a la rama qa dispara el despliegue automático
+# (ver .github/workflows/deploy-qa.yml)
 ```
 
-## API Endpoints
+Antes del primer despliegue, ejecuta el bootstrap de CDK en tu cuenta:
 
-See `endpoints.http` for complete request examples.
+```bash
+cdk bootstrap aws://<account-id>/<region>
+```
 
-| Method | Path | Auth | Description |
+## Endpoints de la API
+
+Consulta `endpoints.http` para ejemplos completos de cada request.
+
+| Método | Ruta | Auth | Descripción |
 |--------|------|------|-------------|
-| `GET` | `/health` | No | Health check |
-| `POST` | `/auth/login` | No | Login, returns JWT |
-| `POST` | `/users` | No | Register user |
-| `GET` | `/users` | Yes | List users (paginated, filterable) |
-| `GET` | `/users/:id` | Yes | Get user by ID |
-| `PUT` | `/users/:id` | Yes | Update user |
-| `DELETE` | `/users/:id` | Yes | Delete user |
-| `GET` | `/api-docs` | No | Swagger UI |
-| `GET` | `/api-docs.json` | No | OpenAPI spec (JSON) |
+| `GET` | `/health` | No | Estado de la API y base de datos |
+| `POST` | `/auth/login` | No | Inicio de sesión, devuelve JWT |
+| `POST` | `/users` | No | Registrar usuario |
+| `GET` | `/users` | Sí | Listar usuarios (paginado, filtrable) |
+| `GET` | `/users/:id` | Sí | Obtener usuario por ID |
+| `PUT` | `/users/:id` | Sí | Actualizar usuario |
+| `DELETE` | `/users/:id` | Sí | Eliminar usuario |
+| `GET` | `/api-docs` | No | Swagger UI interactivo |
+| `GET` | `/api-docs.json` | No | Especificación OpenAPI (JSON) |
 
-### Response format
+### Formato de Respuesta
 
-**Success:**
+**Éxito:**
 
 ```json
 { "success": true, "data": { ... } }
 ```
 
-**Paginated:**
+**Paginado:**
 
 ```json
 { "success": true, "data": [...], "meta": { "page": 1, "limit": 20, "total": 42 } }
@@ -131,24 +137,24 @@ See `endpoints.http` for complete request examples.
 **Error:**
 
 ```json
-{ "success": false, "error": { "code": "NOT_FOUND", "message": "Resource not found" } }
+{ "success": false, "error": { "code": "NOT_FOUND", "message": "Recurso no encontrado" } }
 ```
 
 ## Scripts
 
-| Command | Description |
+| Comando | Descripción |
 |---------|-------------|
-| `npm run typecheck` | Type-check both tsconfigs |
-| `npm run format` | Format all code with Biome |
-| `npm run check` | Format + lint + organize imports |
-| `npm run lint` | Lint without writing changes |
-| `npm run synth` | Synthesize CDK stack |
-| `npm run deploy` | Deploy CDK stack |
-| `npm run destroy` | Destroy CDK stack |
+| `npm run typecheck` | Verificar tipos de TypeScript (ambos tsconfigs) |
+| `npm run format` | Formatear código con Biome |
+| `npm run check` | Formatear + lint + organizar imports |
+| `npm run lint` | Solo lint, sin escribir cambios |
+| `npm run synth` | Sintetizar stack de CDK |
+| `npm run deploy` | Desplegar stack de CDK |
+| `npm run destroy` | Destruir stack de CDK |
 
-## Secrets Manager JSON format
+## Formato del Secreto en Secrets Manager
 
-The RDS secret generated by CDK should be extended with:
+El secreto de RDS generado por CDK debe extenderse con el campo `jwtSecret`:
 
 ```json
 {
@@ -156,8 +162,8 @@ The RDS secret generated by CDK should be extended with:
   "password": "...",
   "host": "...",
   "port": 3306,
-  "jwtSecret": "your-256-bit-secret"
+  "jwtSecret": "clave-secreta-jwt-de-256-bits"
 }
 ```
 
-> The `jwtSecret` field is used by the JWT service at runtime.
+> El campo `jwtSecret` es usado por el JwtService en tiempo de ejecución para firmar y verificar tokens.
