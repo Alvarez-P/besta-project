@@ -1,0 +1,45 @@
+name: AWS CDK Deploy QA
+
+on:
+  push:
+    branches:
+      - qa # Se ejecuta automáticamente cuando confirmas cambios en la rama
+
+permissions:
+  id-token: write   # Obligatorio para solicitar el token OIDC de AWS
+  contents: read    # Obligatorio para realizar el checkout del repositorio
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Descargar el código del repositorio
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Configurar el entorno de Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      # 3. Instalar las dependencias de tu proyecto
+      - name: Install dependencies
+        run: npm ci
+
+      # 4. Autenticarse de forma segura en AWS usando OIDC
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: eu-east-1
+
+      # 5. Generar y comparar diferencias (Opcional, pero recomendado en CI)
+      - name: CDK Diff
+        run: npx cdk diff
+
+      # 6. Desplegar la infraestructura en tu cuenta de AWS
+      - name: CDK Deploy
+        run: npx cdk deploy --require-approval never --context environment=qa
