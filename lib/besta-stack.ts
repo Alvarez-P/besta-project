@@ -94,7 +94,7 @@ export class BestaStack extends cdk.Stack {
       DB_NAME: 'besta',
       DB_SECRET_ARN: rdsInstance.secret?.secretArn || '',
       NODE_ENV: env,
-      SES_FROM_EMAIL: 'besta-test@mailinator.com',
+      SES_FROM_EMAIL: 'alvarez.p.esteban@gmail.com',
     };
     const apiLambda = new NodejsFunction(this, 'ApiLambda', {
       entry: path.join(process.cwd(), 'src', 'index.ts'),

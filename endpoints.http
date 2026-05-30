@@ -2,8 +2,8 @@
 @baseUrl = https://7pavf4fcjk.execute-api.us-east-1.amazonaws.com/prod
 
 # ─── Variables ───────────────────────────────────
-@token = {{login.response.body.data.access_token}}
-@userId = {{createUser.response.body.data.id}}
+@token =
+@userId = 4ca6f583-420c-4fcc-a6ac-95124be3caa8
 
 ### ─── Health ─────────────────────────────────────
 GET {{baseUrl}}/health
@@ -14,7 +14,7 @@ POST {{baseUrl}}/auth/login
 Content-Type: application/json
 
 {
-  "email": "user@example.com",
+  "email": "alvarez.p.esteban@gmail.com",
   "password": "securePass123"
 }
 
@@ -24,8 +24,8 @@ POST {{baseUrl}}/users
 Content-Type: application/json
 
 {
-  "name": "John Doe",
-  "email": "user@example.com",
+  "name": "Esteban Alvarez",
+  "email": "alvarez.p.esteban@gmail.com",
   "password": "securePass123"
 }
 
