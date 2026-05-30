@@ -111,7 +111,7 @@ export class BestaStack extends cdk.Stack {
         minify: true,
         sourceMap: true,
         externalModules: ['pg-hstore'],
-        nodeModules: ['swagger-ui-express', 'swagger-ui-dist'],
+        nodeModules: ['swagger-ui-express', 'swagger-ui-dist', 'mysql2'],
       },
     });
 
