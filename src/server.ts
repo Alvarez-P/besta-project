@@ -16,7 +16,16 @@ export async function createApp(): Promise<express.Application> {
 
   app.use(express.json());
 
-  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDefinition));
+  app.use(
+    '/api-docs',
+    swaggerUi.serve,
+    swaggerUi.setup(swaggerDefinition, {
+      customSiteTitle: 'Besta API Docs',
+      swaggerOptions: {
+        defaultModelsExpandDepth: -1,
+      },
+    }),
+  );
 
   app.get('/api-docs.json', (_req, res) => {
     res.json(swaggerDefinition);

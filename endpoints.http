@@ -24,8 +24,8 @@ POST {{baseUrl}}/users
 Content-Type: application/json
 
 {
-  "name": "Esteban Alvarez",
-  "email": "alvarez.p.esteban@gmail.com",
+  "name": "Besta Test User",
+  "email": "besta-test@mailinator.com",
   "password": "securePass123"
 }
 

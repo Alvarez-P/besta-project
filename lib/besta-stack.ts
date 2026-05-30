@@ -140,7 +140,7 @@ export class BestaStack extends cdk.Stack {
       proxy: true,
       restApiName: `BestaAPI-${env}`,
       description: 'REST API for Besta project',
-      binaryMediaTypes: ['*/*'],
+      binaryMediaTypes: ['text/html', 'text/css', 'application/javascript', 'image/png', 'image/svg+xml'],
       defaultCorsPreflightOptions: {
         allowOrigins: apigw.Cors.ALL_ORIGINS,
         allowMethods: apigw.Cors.ALL_METHODS,
