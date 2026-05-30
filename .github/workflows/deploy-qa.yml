@@ -34,7 +34,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          aws-region: eu-east-1
+          aws-region: us-east-1
 
       # 5. Generar y comparar diferencias (Opcional, pero recomendado en CI)
       - name: CDK Diff
