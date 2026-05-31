@@ -2,7 +2,9 @@ import express from 'express';
 import { registerAuthRoutes } from './context/auth/infrastructure/auth.controller';
 import { registerHealthRoutes } from './context/health/infrastructure/health.controller';
 import { registerUserRoutes } from './context/user/infrastructure/user.controller';
+import { UserModel } from './context/user/infrastructure/user.model';
 import { CircuitBreaker } from './shared/infrastructure/circuit-breaker';
+import { PasswordService } from './shared/infrastructure/crypto/password.service';
 import { initSequelize } from './shared/infrastructure/database/sequelize';
 import { UnitOfWork } from './shared/infrastructure/database/unit-of-work';
 import { idempotency } from './shared/infrastructure/idempotency/idempotency.middleware';
@@ -13,8 +15,29 @@ import { swaggerDefinition } from './shared/infrastructure/swagger/swagger';
 export const sesBreaker = new CircuitBreaker({ failureThreshold: 5, resetTimeout: 30_000 });
 export const dbBreaker = new CircuitBreaker({ failureThreshold: 3, resetTimeout: 10_000 });
 
+async function seedAdmin(): Promise<void> {
+  const email = process.env.ADMIN_EMAIL;
+  const password = process.env.ADMIN_PASSWORD;
+  const name = process.env.ADMIN_NAME ?? 'Admin';
+
+  if (!email || !password) return;
+
+  const existing = await UserModel.findOne({ where: { email } });
+  if (existing) return;
+
+  const passwordService = new PasswordService();
+  const hashed = await passwordService.hash(password);
+
+  await UserModel.create({ name, email, password: hashed } as any);
+
+  console.log(`Admin user created: ${email}`);
+}
+
 export async function createApp(): Promise<express.Application> {
   const sequelize = await initSequelize();
+
+  await seedAdmin();
+
   const uow = new UnitOfWork(sequelize);
 
   const app = express();
