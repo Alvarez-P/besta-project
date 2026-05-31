@@ -14,6 +14,7 @@ export class BestaStack extends cdk.Stack {
     super(scope, id, props);
 
     const env = this.node.tryGetContext('environment') || 'dev';
+    const rdsAllowedIp = this.node.tryGetContext('rds-allowed-ip') as string[] | undefined;
 
     // -----------------------------------------------------------------------
     // VPC
@@ -50,6 +51,11 @@ export class BestaStack extends cdk.Stack {
       allowAllOutbound: false,
     });
     rdsSg.addIngressRule(lambdaSg, ec2.Port.tcp(3306), 'Allow Lambda access to RDS');
+    if (rdsAllowedIp) {
+      rdsAllowedIp.forEach((ip, index) => {
+        rdsSg.addIngressRule(ec2.Peer.ipv4(ip), ec2.Port.tcp(3306), `Allow DBeaver access ${index + 1}`);
+      });
+    }
 
     // -----------------------------------------------------------------------
     // RDS MySQL
@@ -159,6 +165,11 @@ export class BestaStack extends cdk.Stack {
     new cdk.CfnOutput(this, 'DatabaseSecretArn', {
       value: rdsInstance.secret?.secretArn ?? '',
       description: 'ARN of the RDS secret in Secrets Manager',
+    });
+
+    new cdk.CfnOutput(this, 'DatabaseEndpoint', {
+      value: rdsInstance.dbInstanceEndpointAddress,
+      description: 'RDS MySQL hostname (for DBeaver)',
     });
 
     if (sesIdentity) {
