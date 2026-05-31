@@ -53,7 +53,27 @@ Without this, typecheck fails on `sequelize/lib/utils`.
 
 ## No local dev server
 
-Express has no `app.listen()`. It only runs inside Lambda via `@vendia/serverless-express`. All testing is done against deployed API Gateway. Use `endpoints.http` (VS Code REST Client) for manual testing.
+Express has no `app.listen()`. It only runs inside Lambda via `@vendia/serverless-express`. Use `endpoints.http` (VS Code REST Client) for manual testing against deployed API Gateway.
+
+## Tests
+
+```bash
+npm test                   # runs all 31 unit tests (6 suites)
+npm run test:coverage      # with coverage report
+```
+
+All tests run offline (no AWS, no MySQL):
+
+- **`tests/jest.config.ts`** — ts-jest with dedicated `tsconfig.test.json`
+- **`tests/setup.ts`** — mocks `@aws-sdk/client-secrets-manager`, `@aws-sdk/client-ses`, `getJwtSecret()`, and replaces Sequelize MySQL with SQLite in-memory
+- **`tests/__mocks__/`** — AWS SDK mock factories (Secrets Manager, SES)
+
+Tests are organized by layer under `tests/unit/`:
+| Directory | Scope |
+|----------|-------|
+| `application/` | Use cases with real SQLite-backed Sequelize |
+
+**sqlite3 native addon:** `.npmrc` has `ignore-scripts=true`, so after `npm install`, run `npx node-gyp rebuild --directory=node_modules/sqlite3` to compile the SQLite binding.
 
 ## JWT secret resolution
 
@@ -93,7 +113,3 @@ All endpoints return:
 - Error: `{ success: false, error: { code, message, details? } }`
 
 Technical details are never exposed in 5xx responses.
-
-## No tests
-
-No test framework, no test scripts, no test directory. Manual validation only.

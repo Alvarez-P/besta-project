@@ -70,7 +70,10 @@ npm install
 # 2. Usar la versión de Node del proyecto
 nvm use
 
-# 3. Configurar credenciales de AWS
+# 3. Compilar el binario nativo de SQLite (requerido para tests)
+npx node-gyp rebuild --directory=node_modules/sqlite3
+
+# 4. Configurar credenciales de AWS
 aws configure
 ```
 
@@ -142,15 +145,48 @@ Consulta `endpoints.http` para ejemplos completos de cada request.
 
 ## Scripts
 
-| Comando | Descripción |
+| Comando | Descripcion |
 |---------|-------------|
 | `npm run typecheck` | Verificar tipos de TypeScript (ambos tsconfigs) |
-| `npm run format` | Formatear código con Biome |
+| `npm run format` | Formatear codigo con Biome |
 | `npm run check` | Formatear + lint + organizar imports |
 | `npm run lint` | Solo lint, sin escribir cambios |
+| `npm test` | Ejecutar tests unitarios (31 tests, 6 suites) |
+| `npm run test:coverage` | Ejecutar tests con reporte de cobertura |
 | `npm run synth` | Sintetizar stack de CDK |
 | `npm run deploy` | Desplegar stack de CDK |
 | `npm run destroy` | Destruir stack de CDK |
+
+## Tests
+
+Los tests usan **Jest** con **ts-jest** y ejecutan sobre **SQLite en memoria**, sin conexion a AWS ni MySQL.
+
+```bash
+npm test                   # 31 tests en 6 suites
+npm run test:coverage      # con reporte de cobertura
+```
+
+### Estructura
+
+```
+tests/
+├── jest.config.ts                  # Configuracion de Jest (ts-jest)
+├── setup.ts                        # Mocks de AWS SDK, Sequelize -> SQLite, JWT secret
+├── __mocks__/                      # Factories de mock para Secrets Manager y SES
+└── unit/
+    └── application/                # Tests de casos de uso con Sequelize + SQLite real
+```
+
+### Mocks
+
+| Servicio | Estrategia |
+|----------|-----------|
+| `@aws-sdk/client-secrets-manager` | `jest.mock()` con factory en `tests/__mocks__/` |
+| `@aws-sdk/client-ses` | `jest.mock()` → no-op |
+| `getJwtSecret()` | `jest.mock()` → string fijo |
+| `initSequelize()` | `jest.mock()` → `Sequelize({ dialect: 'sqlite', storage: ':memory:' })` |
+
+> **Nota:** `.npmrc` tiene `ignore-scripts=true`. Despues de `npm install`, ejecuta `npx node-gyp rebuild --directory=node_modules/sqlite3` para compilar el binario nativo de SQLite.
 
 ## Formato del Secreto en Secrets Manager
 
