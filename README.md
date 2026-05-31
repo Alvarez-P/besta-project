@@ -13,6 +13,9 @@ API REST serverless construida con **AWS CDK**, **Express.js** y **MySQL**, sigu
 | Base de datos | Amazon RDS MySQL (VPC) |
 | Autenticación | JWT (HMAC-SHA256, `node:crypto`) |
 | Validación | Zod |
+| Idempotencia | DynamoDB + TTL 30 min |
+| Rate Limiting | Sliding window 100 req/min por IP |
+| Circuit Breaker | CLOSED/OPEN/HALF_OPEN (SES + DB) |
 | Documentación | OpenAPI 3.0 + Swagger UI |
 | Herramientas | Biome, Husky, lint-staged |
 
@@ -85,6 +88,7 @@ aws configure
 | `DB_SECRET_ARN` | CDK stack | ARN del secreto en Secrets Manager con credenciales RDS |
 | `SES_FROM_EMAIL` | CDK stack | Email verificado en SES para envío de correos |
 | `NODE_ENV` | CDK context | `dev`, `qa`, `prod` |
+| `IDEMPOTENCY_TABLE_NAME` | CDK stack | Nombre de la tabla DynamoDB para idempotencia |
 
 El **secreto JWT** se almacena en el mismo secreto de Secrets Manager que las credenciales de RDS (campo `jwtSecret`).
 
@@ -115,7 +119,7 @@ Consulta `endpoints.http` para ejemplos completos de cada request.
 |--------|------|------|-------------|
 | `GET` | `/health` | No | Estado de la API y base de datos |
 | `POST` | `/auth/login` | No | Inicio de sesión, devuelve JWT |
-| `POST` | `/users` | No | Registrar usuario |
+| `POST` | `/users` | Si | Registrar usuario |
 | `GET` | `/users` | Sí | Listar usuarios (paginado, filtrable) |
 | `GET` | `/users/:id` | Sí | Obtener usuario por ID |
 | `PUT` | `/users/:id` | Sí | Actualizar usuario |
@@ -151,7 +155,7 @@ Consulta `endpoints.http` para ejemplos completos de cada request.
 | `npm run format` | Formatear codigo con Biome |
 | `npm run check` | Formatear + lint + organizar imports |
 | `npm run lint` | Solo lint, sin escribir cambios |
-| `npm test` | Ejecutar tests unitarios (31 tests, 6 suites) |
+| `npm test` | Ejecutar tests unitarios (54 tests, 9 suites) |
 | `npm run test:coverage` | Ejecutar tests con reporte de cobertura |
 | `npm run synth` | Sintetizar stack de CDK |
 | `npm run deploy` | Desplegar stack de CDK |
@@ -162,7 +166,7 @@ Consulta `endpoints.http` para ejemplos completos de cada request.
 Los tests usan **Jest** con **ts-jest** y ejecutan sobre **SQLite en memoria**, sin conexion a AWS ni MySQL.
 
 ```bash
-npm test                   # 31 tests en 6 suites
+npm test                   # 54 tests en 9 suites
 npm run test:coverage      # con reporte de cobertura
 ```
 
@@ -171,10 +175,11 @@ npm run test:coverage      # con reporte de cobertura
 ```
 tests/
 ├── jest.config.ts                  # Configuracion de Jest (ts-jest)
-├── setup.ts                        # Mocks de AWS SDK, Sequelize -> SQLite, JWT secret
-├── __mocks__/                      # Factories de mock para Secrets Manager y SES
+├── setup.ts                        # Mocks de AWS SDK, DynamoDB, Sequelize -> SQLite, JWT secret
+├── __mocks__/                      # Factories de mock para AWS SDKs
 └── unit/
-    └── application/                # Tests de casos de uso con Sequelize + SQLite real
+    ├── application/                # Tests de casos de uso con Sequelize + SQLite real
+    └── infrastructure/             # Circuit breaker, rate limiter, idempotencia
 ```
 
 ### Mocks
@@ -185,8 +190,43 @@ tests/
 | `@aws-sdk/client-ses` | `jest.mock()` → no-op |
 | `getJwtSecret()` | `jest.mock()` → string fijo |
 | `initSequelize()` | `jest.mock()` → `Sequelize({ dialect: 'sqlite', storage: ':memory:' })` |
+| `@aws-sdk/client-dynamodb` + `lib-dynamodb` | Mock in-memory con `GetCommand`/`PutCommand`/`DeleteCommand` |
 
 > **Nota:** `.npmrc` tiene `ignore-scripts=true`. Despues de `npm install`, ejecuta `npx node-gyp rebuild --directory=node_modules/sqlite3` para compilar el binario nativo de SQLite.
+
+## Mecanismos de Resiliencia
+
+### Rate Limiting
+
+Limite por IP usando sliding window: **100 requests por minuto**. Aplica globalmente a todas las rutas. Headers de respuesta:
+
+- `X-RateLimit-Limit`: maximo permitido
+- `X-RateLimit-Remaining`: restantes en la ventana actual
+- `X-RateLimit-Reset`: timestamp Unix del reset
+- `Retry-After`: segundos a esperar cuando se excede (status 429)
+
+### Circuit Breaker
+
+Protege dos servicios externos:
+
+| Servicio | Threshold | Timeout |
+|----------|-----------|---------|
+| **SES** (emails) | 5 fallos consecutivos | 30s |
+| **MySQL** (health) | 3 fallos consecutivos | 10s |
+
+Estados:
+- **CLOSED**: funcionamiento normal
+- **OPEN**: rechaza peticiones, devuelve error inmediatamente
+- **HALF_OPEN**: permite una peticion de prueba para verificar recuperacion
+
+### Idempotencia
+
+Basada en **DynamoDB** con TTL de 30 minutos. Header opcional `Idempotency-Key` en metodos mutantes (`POST`, `PUT`, `DELETE`):
+
+1. Si la key existe y no expiro → devuelve la respuesta cacheada
+2. Si es nueva → procesa y guarda la respuesta
+3. Si algun circuit breaker esta **OPEN** → no guarda (respuesta potencialmente parcial)
+4. Si todos los breakers estan **OPEN** → devuelve **503 Service Unavailable** sin procesar
 
 ## Formato del Secreto en Secrets Manager
 

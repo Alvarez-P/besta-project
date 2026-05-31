@@ -108,6 +108,45 @@ export class BestaStack extends cdk.Stack {
     idempotencyTable.grantReadWriteData(lambdaRole);
 
     // -----------------------------------------------------------------------
+    // Seed Lambda IAM Role
+    // -----------------------------------------------------------------------
+    const seedRole = new iam.Role(this, 'SeedLambdaRole', {
+      assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
+      managedPolicies: [iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaVPCAccessExecutionRole')],
+    });
+    rdsInstance.secret?.grantRead(seedRole);
+
+    // -----------------------------------------------------------------------
+    // Seed Lambda (admin user)
+    // -----------------------------------------------------------------------
+    const SES_TO_EMAIL = ['alvarez.pacheco.a.e@gmail.com', 'aeap19980929@gmail.com', 'besta-test@mailinator.com'];
+
+    const seedFn = new NodejsFunction(this, 'SeedFunction', {
+      entry: path.join(process.cwd(), 'bin', 'seed.ts'),
+      handler: 'handler',
+      runtime: lambda.Runtime.NODEJS_20_X,
+      vpc,
+      vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
+      securityGroups: [lambdaSg],
+      role: seedRole,
+      timeout: cdk.Duration.seconds(60),
+      memorySize: 256,
+      bundling: {
+        externalModules: ['pg-hstore'],
+        nodeModules: ['mysql2'],
+      },
+    });
+
+    const seedResource = new cdk.CustomResource(this, 'SeedDatabase', {
+      serviceToken: seedFn.functionArn,
+      properties: {
+        adminEmail: SES_TO_EMAIL[0],
+        adminName: 'Admin',
+        dbSecretArn: rdsInstance.secret?.secretArn || '',
+      },
+    });
+
+    // -----------------------------------------------------------------------
     // Lambda Function (Express API)
     // -----------------------------------------------------------------------
     const environment: Record<string, string> = {
@@ -118,7 +157,6 @@ export class BestaStack extends cdk.Stack {
       SES_FROM_EMAIL: 'alvarez.p.esteban@gmail.com',
       IDEMPOTENCY_TABLE_NAME: idempotencyTable.tableName,
     };
-    const SES_TO_EMAIL = ['alvarez.pacheco.a.e@gmail.com', 'aeap19980929@gmail.com', 'besta-test@mailinator.com'];
     const apiLambda = new NodejsFunction(this, 'ApiLambda', {
       entry: path.join(process.cwd(), 'src', 'index.ts'),
       handler: 'handler',
@@ -161,7 +199,7 @@ export class BestaStack extends cdk.Stack {
       defaultCorsPreflightOptions: {
         allowOrigins: apigw.Cors.ALL_ORIGINS,
         allowMethods: apigw.Cors.ALL_METHODS,
-        allowHeaders: ['Content-Type', 'X-Amz-Date', 'Authorization', 'X-Api-Key'],
+        allowHeaders: ['Content-Type', 'X-Amz-Date', 'Authorization', 'X-Api-Key', 'Idempotency-Key'],
       },
     });
 
@@ -181,6 +219,11 @@ export class BestaStack extends cdk.Stack {
     new cdk.CfnOutput(this, 'DatabaseEndpoint', {
       value: rdsInstance.dbInstanceEndpointAddress,
       description: 'RDS MySQL hostname (for DBeaver)',
+    });
+
+    new cdk.CfnOutput(this, 'AdminPassword', {
+      value: seedResource.getAttString('Password'),
+      description: 'Plain text admin password (save securely, only shown on first deploy)',
     });
 
     if (sesIdentity) {
