@@ -24,12 +24,17 @@ export function idempotency(options: IdempotencyOptions = {}) {
       return next();
     }
 
+    const requestMethod = req.method;
+    const requestPath = req.path;
+
     try {
       const existing = await repo.get(key);
 
       if (existing) {
-        res.status(existing.statusCode).json(JSON.parse(existing.response));
-        return;
+        if (existing.method === requestMethod && existing.path === requestPath) {
+          res.status(existing.statusCode).json(JSON.parse(existing.response));
+          return;
+        }
       }
     } catch {
       return next();
@@ -48,7 +53,7 @@ export function idempotency(options: IdempotencyOptions = {}) {
       const openAfterProcessing = circuitBreakers.some((cb) => cb.currentState === CircuitState.OPEN);
 
       if (!openAfterProcessing) {
-        repo.save(key, body, res.statusCode, ttlSeconds).catch((err) => {
+        repo.save(key, body, res.statusCode, requestMethod, requestPath, ttlSeconds).catch((err) => {
           console.error('Failed to store idempotency key:', err);
         });
       }

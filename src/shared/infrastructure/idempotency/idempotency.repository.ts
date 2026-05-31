@@ -12,6 +12,8 @@ export interface IdempotencyRecord {
   expiresAt: number;
   response: string;
   statusCode: number;
+  method: string;
+  path: string;
 }
 
 const DEFAULT_TTL_SECONDS = 1800;
@@ -39,7 +41,14 @@ export class IdempotencyRepository {
     return record;
   }
 
-  async save(key: string, response: unknown, statusCode: number, ttlSeconds = DEFAULT_TTL_SECONDS): Promise<void> {
+  async save(
+    key: string,
+    response: unknown,
+    statusCode: number,
+    method: string,
+    path: string,
+    ttlSeconds = DEFAULT_TTL_SECONDS,
+  ): Promise<void> {
     const expiresAt = Math.floor(Date.now() / 1000) + ttlSeconds;
 
     await client.send(
@@ -50,6 +59,8 @@ export class IdempotencyRepository {
           expiresAt,
           response: JSON.stringify(response),
           statusCode,
+          method,
+          path,
         },
       }),
     );
