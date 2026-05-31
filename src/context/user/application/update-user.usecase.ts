@@ -1,3 +1,4 @@
+import type { CircuitBreaker } from '../../../shared/infrastructure/circuit-breaker';
 import { PasswordService } from '../../../shared/infrastructure/crypto/password.service';
 import type { UnitOfWork } from '../../../shared/infrastructure/database/unit-of-work';
 import { NotFoundError } from '../../../shared/infrastructure/errors/http.errors';
@@ -14,7 +15,10 @@ export class UpdateUserUseCase {
   private readonly passwordService = new PasswordService();
   private readonly notificationService = new NotificationService(new SesAdapter());
 
-  constructor(private readonly uow: UnitOfWork) {}
+  constructor(
+    private readonly uow: UnitOfWork,
+    private readonly sesBreaker?: CircuitBreaker,
+  ) {}
 
   async execute(id: string, dto: UpdateUserDto): Promise<User> {
     return this.uow.execute(async (uow) => {
@@ -51,9 +55,17 @@ export class UpdateUserUseCase {
       const updated = await repo.findOne({ where: { id } });
 
       if (emailChanged) {
-        this.notificationService.sendUpdateEmail(updated!).catch((err) => {
-          console.error('Failed to send update email:', err);
-        });
+        const sendEmail = () => this.notificationService.sendUpdateEmail(updated!);
+
+        if (this.sesBreaker) {
+          this.sesBreaker.execute(sendEmail).catch((err) => {
+            console.error('Failed to send update email:', err);
+          });
+        } else {
+          sendEmail().catch((err) => {
+            console.error('Failed to send update email:', err);
+          });
+        }
       }
 
       return {

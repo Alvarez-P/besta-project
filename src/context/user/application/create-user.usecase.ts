@@ -1,3 +1,4 @@
+import type { CircuitBreaker } from '../../../shared/infrastructure/circuit-breaker';
 import { PasswordService } from '../../../shared/infrastructure/crypto/password.service';
 import type { UnitOfWork } from '../../../shared/infrastructure/database/unit-of-work';
 import { NotificationService } from '../../../shared/infrastructure/mail/notification.service';
@@ -13,7 +14,10 @@ export class CreateUserUseCase {
   private readonly passwordService = new PasswordService();
   private readonly notificationService = new NotificationService(new SesAdapter());
 
-  constructor(private readonly uow: UnitOfWork) {}
+  constructor(
+    private readonly uow: UnitOfWork,
+    private readonly sesBreaker?: CircuitBreaker,
+  ) {}
 
   async execute(dto: CreateUserDto): Promise<User> {
     const email = UserEmail.create(dto.email);
@@ -32,9 +36,13 @@ export class CreateUserUseCase {
       };
     });
 
-    this.notificationService.sendWelcomeEmail(user).catch((err) => {
-      console.error('Failed to send welcome email:', err);
-    });
+    const sendEmail = () =>
+      this.notificationService.sendWelcomeEmail(user).catch((err) => {
+        console.error('Failed to send welcome email:', err);
+      });
+
+    if (this.sesBreaker) this.sesBreaker.execute(sendEmail);
+    else sendEmail();
 
     return user;
   }

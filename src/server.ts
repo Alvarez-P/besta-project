@@ -2,10 +2,16 @@ import express from 'express';
 import { registerAuthRoutes } from './context/auth/infrastructure/auth.controller';
 import { registerHealthRoutes } from './context/health/infrastructure/health.controller';
 import { registerUserRoutes } from './context/user/infrastructure/user.controller';
+import { CircuitBreaker } from './shared/infrastructure/circuit-breaker';
 import { initSequelize } from './shared/infrastructure/database/sequelize';
 import { UnitOfWork } from './shared/infrastructure/database/unit-of-work';
+import { idempotency } from './shared/infrastructure/idempotency/idempotency.middleware';
 import { errorHandler } from './shared/infrastructure/middleware/error-handler';
+import { rateLimiter } from './shared/infrastructure/middleware/rate-limiter';
 import { swaggerDefinition } from './shared/infrastructure/swagger/swagger';
+
+export const sesBreaker = new CircuitBreaker({ failureThreshold: 5, resetTimeout: 30_000 });
+export const dbBreaker = new CircuitBreaker({ failureThreshold: 3, resetTimeout: 10_000 });
 
 export async function createApp(): Promise<express.Application> {
   const sequelize = await initSequelize();
@@ -13,7 +19,9 @@ export async function createApp(): Promise<express.Application> {
 
   const app = express();
 
+  app.use(rateLimiter({ windowMs: 60_000, maxRequests: 100 }));
   app.use(express.json());
+  app.use(idempotency({ circuitBreakers: [sesBreaker, dbBreaker] }));
 
   app.get('/api-docs', (_req, res) => {
     res.send(`<!DOCTYPE html>
@@ -41,9 +49,9 @@ export async function createApp(): Promise<express.Application> {
     res.json(swaggerDefinition);
   });
 
-  registerHealthRoutes(app);
+  registerHealthRoutes(app, dbBreaker);
   registerAuthRoutes(app);
-  registerUserRoutes(app, uow);
+  registerUserRoutes(app, uow, sesBreaker);
 
   app.use(errorHandler);
 
