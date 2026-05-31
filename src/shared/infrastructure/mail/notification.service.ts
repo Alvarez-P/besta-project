@@ -8,7 +8,7 @@ export class NotificationService {
     const email = {
       to: user.email.toString(),
       subject: 'Welcome to Besta!',
-      body: `Hi ${user.name},\n\nYour account has been created successfully.\n\nBest regards,\nBesta Team`,
+      body: `Hi ${user.name},\n\nYour account has been created successfully.\n\nBest regards.\nBesta Team`,
     };
 
     await this.sesAdapter.sendEmail(email);

@@ -23,7 +23,7 @@ export class GetUsersUseCase {
 
     const users: User[] = rows.map((m) => ({
       id: m.id,
-      email: UserEmail.create(m.email),
+      email: UserEmail.create(m.email).toString(),
       name: m.name,
       createdAt: m.createdAt,
       updatedAt: m.updatedAt,

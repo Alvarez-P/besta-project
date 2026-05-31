@@ -23,7 +23,13 @@ export class CreateUserUseCase {
       const repo = uow.getRepository(UserRepository);
       await this.userService.ensureEmailIsUnique(email.toString(), repo);
       const saved = await repo.create({ name: dto.name, email: email.toString(), password: hashedPassword });
-      return { id: saved.id, email, name: saved.name, createdAt: saved.createdAt, updatedAt: saved.updatedAt };
+      return {
+        id: saved.id,
+        email: UserEmail.create(saved.email).toString(),
+        name: saved.name,
+        createdAt: saved.createdAt,
+        updatedAt: saved.updatedAt,
+      };
     });
 
     this.notificationService.sendWelcomeEmail(user).catch((err) => {

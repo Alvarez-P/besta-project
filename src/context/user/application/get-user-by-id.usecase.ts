@@ -14,7 +14,7 @@ export class GetUserByIdUseCase {
 
     return {
       id: model.id,
-      email: UserEmail.create(model.email),
+      email: UserEmail.create(model.email).toString(),
       name: model.name,
       createdAt: model.createdAt,
       updatedAt: model.updatedAt,
