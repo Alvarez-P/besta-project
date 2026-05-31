@@ -21,8 +21,10 @@
     ]
   },
   "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.600.0",
     "@aws-sdk/client-secrets-manager": "3.600.0",
     "@aws-sdk/client-ses": "3.600.0",
+    "@aws-sdk/lib-dynamodb": "^3.600.0",
     "@vendia/serverless-express": "4.10.0",
     "express": "4.19.0",
     "jsonwebtoken": "^9.0.3",

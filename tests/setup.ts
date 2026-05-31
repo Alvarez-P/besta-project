@@ -14,6 +14,14 @@ jest.mock('@aws-sdk/client-ses', () => {
   return require('./__mocks__/client-ses');
 });
 
+jest.mock('@aws-sdk/client-dynamodb', () => {
+  return require('./__mocks__/client-dynamodb');
+});
+
+jest.mock('@aws-sdk/lib-dynamodb', () => {
+  return require('./__mocks__/lib-dynamodb');
+});
+
 jest.mock('../src/shared/infrastructure/crypto/jwt-secret', () => ({
   __esModule: true,
   getJwtSecret: jest.fn().mockResolvedValue('test-jwt-secret-for-unit-tests'),

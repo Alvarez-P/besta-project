@@ -1,4 +1,5 @@
 import type { Router } from 'express';
+import type { CircuitBreaker } from '../../../shared/infrastructure/circuit-breaker';
 import type { UnitOfWork } from '../../../shared/infrastructure/database/unit-of-work';
 import { authGuard } from '../../../shared/infrastructure/middleware/auth-guard';
 import { validate } from '../../../shared/infrastructure/middleware/validate';
@@ -13,11 +14,11 @@ import { GetUserByIdUseCase } from '../application/get-user-by-id.usecase';
 import { GetUsersUseCase } from '../application/get-users.usecase';
 import { UpdateUserUseCase } from '../application/update-user.usecase';
 
-export function registerUserRoutes(app: Router, uow: UnitOfWork): void {
-  const createUserUseCase = new CreateUserUseCase(uow);
+export function registerUserRoutes(app: Router, uow: UnitOfWork, sesBreaker?: CircuitBreaker): void {
+  const createUserUseCase = new CreateUserUseCase(uow, sesBreaker);
   const getUsersUseCase = new GetUsersUseCase();
   const getUserByIdUseCase = new GetUserByIdUseCase();
-  const updateUserUseCase = new UpdateUserUseCase(uow);
+  const updateUserUseCase = new UpdateUserUseCase(uow, sesBreaker);
   const deleteUserUseCase = new DeleteUserUseCase(uow);
 
   app.post('/users', validate(createUserSchema), async (req, res, next) => {

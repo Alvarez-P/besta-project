@@ -1,6 +1,7 @@
 import * as path from 'node:path';
 import * as cdk from 'aws-cdk-lib';
 import * as apigw from 'aws-cdk-lib/aws-apigateway';
+import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
@@ -96,6 +97,17 @@ export class BestaStack extends cdk.Stack {
     );
 
     // -----------------------------------------------------------------------
+    // DynamoDB — Idempotency
+    // -----------------------------------------------------------------------
+    const idempotencyTable = new dynamodb.Table(this, 'IdempotencyTable', {
+      partitionKey: { name: 'idempotencyKey', type: dynamodb.AttributeType.STRING },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      timeToLiveAttribute: 'expiresAt',
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+    });
+    idempotencyTable.grantReadWriteData(lambdaRole);
+
+    // -----------------------------------------------------------------------
     // Lambda Function (Express API)
     // -----------------------------------------------------------------------
     const environment: Record<string, string> = {
@@ -104,6 +116,7 @@ export class BestaStack extends cdk.Stack {
       JWT_SECRET_ARN: jwtSecret.secretArn,
       NODE_ENV: env,
       SES_FROM_EMAIL: 'alvarez.p.esteban@gmail.com',
+      IDEMPOTENCY_TABLE_NAME: idempotencyTable.tableName,
     };
     const SES_TO_EMAIL = ['alvarez.pacheco.a.e@gmail.com', 'aeap19980929@gmail.com', 'besta-test@mailinator.com'];
     const apiLambda = new NodejsFunction(this, 'ApiLambda', {
