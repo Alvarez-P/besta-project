@@ -16,9 +16,7 @@ export async function getJwtSecret(): Promise<string> {
 
   if (jwtSecretArn) {
     const response = await client.send(new GetSecretValueCommand({ SecretId: jwtSecretArn }));
-    const secret = JSON.parse(response.SecretString!);
-    cachedSecret = (secret.jwtSecret ?? secret.password ?? secret.JWT_SECRET ?? JSON.stringify(secret)) as string;
-    return cachedSecret;
+    return response.SecretString!
   }
 
   const dbSecretArn = process.env.DB_SECRET_ARN;
