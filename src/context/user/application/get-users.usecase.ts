@@ -31,7 +31,7 @@ export class GetUsersUseCase {
 
     return {
       data: users,
-      meta: { page: query.page || 1, limit: query.limit || 20, total: count },
+      meta: { page: Math.floor(filter.offset / filter.limit) + 1, limit: filter.limit, total: count },
     };
   }
 }
