@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "commonjs",
+    "lib": ["ES2020"],
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "moduleResolution": "node",
+    "outDir": "./dist-test",
+    "baseUrl": ".",
+    "types": ["jest", "node"],
+    "paths": {
+      "sequelize/lib/utils": ["./node_modules/sequelize/types/utils"]
+    }
+  },
+  "include": ["tests/**/*.ts"],
+  "exclude": ["node_modules"]
+}
