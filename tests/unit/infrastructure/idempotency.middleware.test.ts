@@ -6,9 +6,10 @@ import { ServiceUnavailableError } from '../../../src/shared/infrastructure/erro
 import { idempotency } from '../../../src/shared/infrastructure/idempotency/idempotency.middleware';
 import { IdempotencyRepository } from '../../../src/shared/infrastructure/idempotency/idempotency.repository';
 
-function mockReq(method: string, idempotencyKey?: string): Request {
+function mockReq(method: string, idempotencyKey?: string, path = '/'): Request {
   const req: any = {};
   req.method = method;
+  req.path = path;
   req.headers = {};
   if (idempotencyKey) {
     req.headers['idempotency-key'] = idempotencyKey;
@@ -66,7 +67,7 @@ describe('idempotency middleware', () => {
 
   it('returns cached response when idempotency key exists', async () => {
     const key = 'cached-key';
-    await repo.save(key, { data: 'cached' }, 200);
+    await repo.save(key, { data: 'cached' }, 200, 'POST', '/');
 
     const middleware = idempotency();
     const req = mockReq('POST', key);
@@ -174,6 +175,34 @@ describe('idempotency middleware', () => {
 
     const middleware = idempotency({ circuitBreakers: [closedBreaker] });
     const req = mockReq('POST', 'key-pass');
+    const res = mockRes();
+    const next = getNext();
+
+    await middleware(req, res, next);
+
+    expect(next).toHaveBeenCalledWith();
+  });
+
+  it('passes through when same key is used with different method', async () => {
+    const key = 'key-method';
+    await repo.save(key, { data: 'cached' }, 200, 'POST', '/');
+
+    const middleware = idempotency();
+    const req = mockReq('DELETE', key);
+    const res = mockRes();
+    const next = getNext();
+
+    await middleware(req, res, next);
+
+    expect(next).toHaveBeenCalledWith();
+  });
+
+  it('passes through when same key is used with different path', async () => {
+    const key = 'key-path';
+    await repo.save(key, { data: 'cached' }, 200, 'POST', '/users');
+
+    const middleware = idempotency();
+    const req = mockReq('POST', key, '/auth/login');
     const res = mockRes();
     const next = getNext();
 
