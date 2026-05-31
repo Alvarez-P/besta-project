@@ -48,7 +48,7 @@ export class UpdateUserUseCase {
 
       return {
         id: updated!.id,
-        email: UserEmail.create(updated!.email),
+        email: UserEmail.create(updated!.email).toString(),
         name: updated!.name,
         createdAt: updated!.createdAt,
         updatedAt: updated!.updatedAt,

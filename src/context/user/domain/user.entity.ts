@@ -1,8 +1,6 @@
-import type { UserEmail } from './email.vo';
-
 export interface User {
   id: string;
-  email: UserEmail;
+  email: string;
   name: string;
   password?: string;
   createdAt: Date;
