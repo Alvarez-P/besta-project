@@ -26,7 +26,6 @@
     "jsonwebtoken": "^9.0.3",
     "mysql2": "3.22.4",
     "sequelize": "6.37.8",
-    "swagger-ui-express": "5.0.1",
     "zod": "4.4.3"
   },
   "devDependencies": {
@@ -36,7 +35,6 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "20.19.41",
     "@types/sequelize": "4.28.20",
-    "@types/swagger-ui-express": "4.1.8",
     "aws-cdk": "2.150.0",
     "aws-cdk-lib": "2.150.0",
     "constructs": "10.0.0",
