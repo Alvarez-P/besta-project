@@ -64,7 +64,7 @@ export const swaggerDefinition = {
           data: {
             type: 'object',
             properties: {
-              token: { type: 'string', example: 'eyJ...' },
+              access_token: { type: 'string', example: 'eyJ...' },
             },
           },
         },
