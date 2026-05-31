@@ -3,6 +3,7 @@ import type { Col, Fn, Literal, MakeNullishOptional } from 'sequelize/lib/utils'
 
 export interface Repository<T extends Model> {
   find(options?: FindOptions<Attributes<T>>): Promise<T[]>;
+  findAndCount(options?: FindOptions<Attributes<T>>): Promise<{ rows: T[]; count: number }>;
   findOne(options?: FindOptions<Attributes<T>>): Promise<T | null>;
   delete(options?: DestroyOptions<Attributes<T>>): Promise<number>;
   update(
