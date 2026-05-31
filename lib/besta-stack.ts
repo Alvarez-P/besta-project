@@ -114,9 +114,6 @@ export class BestaStack extends cdk.Stack {
     const SES_TO_EMAIL = ['alvarez.pacheco.a.e@gmail.com', 'aeap19980929@gmail.com', 'besta-test@mailinator.com'];
     const adminPassword = randomBytes(12).toString('base64').replace(/[/+=]/g, 'x');
 
-    // -----------------------------------------------------------------------
-    // Lambda Function (Express API)
-    // -----------------------------------------------------------------------
     const environment: Record<string, string> = {
       DB_NAME: 'besta',
       DB_SECRET_ARN: rdsInstance.secret?.secretArn || '',
