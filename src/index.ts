@@ -16,12 +16,7 @@ export const handler = async (event: APIGatewayProxyEvent, context: Context): Pr
   try {
     if (!cachedHandler) {
       const app = await createApp();
-      cachedHandler = serverlessExpress({
-        app,
-        binarySettings: {
-          contentTypes: ['text/html', 'text/css', 'application/javascript', 'image/png', 'image/svg+xml'],
-        },
-      });
+      cachedHandler = serverlessExpress({ app });
     }
 
     return (await cachedHandler(event, context, undefined as any)) as APIGatewayProxyResult;

@@ -14,7 +14,6 @@ export class BestaStack extends cdk.Stack {
     super(scope, id, props);
 
     const env = this.node.tryGetContext('environment') || 'dev';
-    const rdsAllowedIp = this.node.tryGetContext('rds-allowed-ip') as string[] | undefined;
 
     // -----------------------------------------------------------------------
     // VPC
@@ -51,11 +50,6 @@ export class BestaStack extends cdk.Stack {
       allowAllOutbound: false,
     });
     rdsSg.addIngressRule(lambdaSg, ec2.Port.tcp(3306), 'Allow Lambda access to RDS');
-    if (rdsAllowedIp) {
-      rdsAllowedIp.forEach((ip, index) => {
-        rdsSg.addIngressRule(ec2.Peer.ipv4(ip), ec2.Port.tcp(3306), `Allow DBeaver access ${index + 1}`);
-      });
-    }
 
     // -----------------------------------------------------------------------
     // RDS MySQL
@@ -104,7 +98,6 @@ export class BestaStack extends cdk.Stack {
     // -----------------------------------------------------------------------
     // Lambda Function (Express API)
     // -----------------------------------------------------------------------
-
     const environment: Record<string, string> = {
       DB_NAME: 'besta',
       DB_SECRET_ARN: rdsInstance.secret?.secretArn || '',
@@ -112,6 +105,7 @@ export class BestaStack extends cdk.Stack {
       NODE_ENV: env,
       SES_FROM_EMAIL: 'alvarez.p.esteban@gmail.com',
     };
+    const SES_TO_EMAIL = ['alvarez.pacheco.a.e@gmail.com', 'aeap19980929@gmail.com', 'besta-test@mailinator.com'];
     const apiLambda = new NodejsFunction(this, 'ApiLambda', {
       entry: path.join(process.cwd(), 'src', 'index.ts'),
       handler: 'handler',
@@ -127,15 +121,20 @@ export class BestaStack extends cdk.Stack {
         minify: true,
         sourceMap: true,
         externalModules: ['pg-hstore'],
-        nodeModules: ['swagger-ui-express', 'swagger-ui-dist', 'mysql2'],
+        nodeModules: ['mysql2'],
       },
     });
 
     // -----------------------------------------------------------------------
     // SES Email Identity
     // -----------------------------------------------------------------------
-    const sesIdentity = new ses.EmailIdentity(this, 'SesIdentity', {
+    const sesIdentity = new ses.EmailIdentity(this, 'SesIdentityFrom', {
       identity: ses.Identity.email(environment.SES_FROM_EMAIL),
+    });
+    SES_TO_EMAIL.forEach((email) => {
+      new ses.EmailIdentity(this, `SesIdentityTo${email.replace(/[@.]/g, '')}`, {
+        identity: ses.Identity.email(email),
+      });
     });
 
     // -----------------------------------------------------------------------
@@ -146,7 +145,6 @@ export class BestaStack extends cdk.Stack {
       proxy: true,
       restApiName: `BestaAPI-${env}`,
       description: 'REST API for Besta project',
-      binaryMediaTypes: ['text/html', 'text/css', 'application/javascript', 'image/png', 'image/svg+xml'],
       defaultCorsPreflightOptions: {
         allowOrigins: apigw.Cors.ALL_ORIGINS,
         allowMethods: apigw.Cors.ALL_METHODS,

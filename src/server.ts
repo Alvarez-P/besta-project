@@ -1,5 +1,4 @@
 import express from 'express';
-import swaggerUi from 'swagger-ui-express';
 import { registerAuthRoutes } from './context/auth/infrastructure/auth.controller';
 import { registerHealthRoutes } from './context/health/infrastructure/health.controller';
 import { registerUserRoutes } from './context/user/infrastructure/user.controller';
@@ -16,16 +15,27 @@ export async function createApp(): Promise<express.Application> {
 
   app.use(express.json());
 
-  app.use(
-    '/prod/api-docs',
-    swaggerUi.serve,
-    swaggerUi.setup(swaggerDefinition, {
-      customSiteTitle: 'Besta API Docs',
-      swaggerOptions: {
-        defaultModelsExpandDepth: -1,
-      },
-    }),
-  );
+  app.get('/api-docs', (_req, res) => {
+    res.send(`<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Besta API Docs</title>
+  <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css">
+</head>
+<body>
+  <div id="swagger-ui"></div>
+  <script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
+  <script>
+    SwaggerUIBundle({
+      url: window.location.href.replace(/\\/api-docs\\/?$/, '/api-docs.json'),
+      dom_id: '#swagger-ui',
+      defaultModelsExpandDepth: -1
+    });
+  </script>
+</body>
+</html>`);
+  });
 
   app.get('/api-docs.json', (_req, res) => {
     res.json(swaggerDefinition);

@@ -1,6 +1,6 @@
 {
   "cSpell.language": "en,es",
-  "cSpell.words": ["besta", "dtos", "usecase", "UUIDV", "vendia"],
+  "cSpell.words": ["besta", "dtos", "hstore", "usecase", "UUIDV", "vendia"],
   "editor.defaultFormatter": "biomejs.biome",
   "editor.codeActionsOnSave": {
     "source.fixAll.biome": "explicit"
