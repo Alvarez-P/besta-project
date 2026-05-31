@@ -136,6 +136,16 @@ export const swaggerDefinition = {
         },
       },
     },
+    parameters: {
+      idempotencyKey: {
+        name: 'idempotency-key',
+        in: 'header',
+        required: false,
+        schema: { type: 'string', minLength: 1, maxLength: 256 },
+        description:
+          'Optional idempotency key to ensure the request is processed exactly once. If the same key is used within 30 minutes, the cached response is returned and the request is not processed again.',
+      },
+    },
   },
   paths: {
     '/health': {
@@ -160,6 +170,7 @@ export const swaggerDefinition = {
         tags: ['Auth'],
         summary: 'User login',
         description: 'Authenticate with email and password. Returns a JWT token.',
+        parameters: [{ $ref: '#/components/parameters/idempotencyKey' }],
         requestBody: {
           required: true,
           content: {
@@ -201,6 +212,7 @@ export const swaggerDefinition = {
         tags: ['Users'],
         summary: 'Create user',
         description: 'Register a new user. A welcome email is sent after successful registration.',
+        parameters: [{ $ref: '#/components/parameters/idempotencyKey' }],
         requestBody: {
           required: true,
           content: {
@@ -361,6 +373,7 @@ export const swaggerDefinition = {
             schema: { type: 'string', format: 'uuid' },
             description: 'User UUID',
           },
+          { $ref: '#/components/parameters/idempotencyKey' },
         ],
         requestBody: {
           required: true,
@@ -431,6 +444,7 @@ export const swaggerDefinition = {
             schema: { type: 'string', format: 'uuid' },
             description: 'User UUID',
           },
+          { $ref: '#/components/parameters/idempotencyKey' },
         ],
         responses: {
           '204': {
