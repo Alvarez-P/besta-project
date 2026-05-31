@@ -58,7 +58,7 @@ Express has no `app.listen()`. It only runs inside Lambda via `@vendia/serverles
 ## Tests
 
 ```bash
-npm test                   # runs all 31 unit tests (6 suites)
+npm test                   # runs all 54 unit tests (9 suites)
 npm run test:coverage      # with coverage report
 ```
 
@@ -66,12 +66,13 @@ All tests run offline (no AWS, no MySQL):
 
 - **`tests/jest.config.ts`** — ts-jest with dedicated `tsconfig.test.json`
 - **`tests/setup.ts`** — mocks `@aws-sdk/client-secrets-manager`, `@aws-sdk/client-ses`, `getJwtSecret()`, and replaces Sequelize MySQL with SQLite in-memory
-- **`tests/__mocks__/`** — AWS SDK mock factories (Secrets Manager, SES)
+- **`tests/__mocks__/`** — AWS SDK mock factories (Secrets Manager, SES, DynamoDB)
 
 Tests are organized by layer under `tests/unit/`:
 | Directory | Scope |
 |----------|-------|
 | `application/` | Use cases with real SQLite-backed Sequelize |
+| `infrastructure/` | Circuit breaker, rate limiter, idempotency middleware |
 
 **sqlite3 native addon:** `.npmrc` has `ignore-scripts=true`, so after `npm install`, run `npx node-gyp rebuild --directory=node_modules/sqlite3` to compile the SQLite binding.
 
@@ -105,6 +106,31 @@ Must be `DataTypes.UUID` with `defaultValue: DataTypes.UUIDV4`. Using `DataTypes
 ## Swagger
 
 Served as a static HTML page at `/api-docs`. Loads Swagger UI from CDN (unpkg.com). No npm dependency, no binary media types, no nodeModules. The OpenAPI spec is at `/api-docs.json`. The server URL in the spec is `/prod` — update it when changing the API Gateway stage.
+
+## Middleware pipeline
+
+`server.ts` registers middlewares in order before routes:
+
+1. `rateLimiter({ windowMs: 60_000, maxRequests: 100 })` — sliding window per IP, returns 429 on limit
+2. `express.json()` — body parsing
+3. `idempotency({ circuitBreakers: [sesBreaker, dbBreaker] })` — DynamoDB-backed, checks header `Idempotency-Key` on mutating methods (POST, PUT, DELETE). Returns 503 early if any breaker is OPEN.
+
+`sesBreaker` and `dbBreaker` are exported singletons instantiated in `server.ts` and passed to use cases.
+
+### CircuitBreaker (`circuit-breaker.ts`)
+
+Generic state machine — CLOSED → OPEN → HALF_OPEN. Used to wrap:
+- **SES**: email sending in `CreateUserUseCase` and `UpdateUserUseCase`
+- **DB**: `sequelize.authenticate()` in health check
+
+### Idempotency table (`idempotency.repository.ts`)
+
+DynamoDB table created by CDK:
+- PK: `idempotencyKey` (string)
+- TTL attribute: `expiresAt` (unix timestamp, 30 min)
+- Additional: `response` (serialized JSON), `statusCode` (number)
+
+CDK grants `dynamodb:GetItem` + `dynamodb:PutItem` + `dynamodb:DeleteItem` to the Lambda role. The `@aws-sdk/lib-dynamodb` DocumentClient doesn't need `nodeModules` in esbuild (it has no native bindings).
 
 ## Response format
 
