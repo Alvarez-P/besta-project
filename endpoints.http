@@ -1,5 +1,5 @@
 # @baseUrl = http://localhost:3000
-@baseUrl = https://7pavf4fcjk.execute-api.us-east-1.amazonaws.com/prod
+@baseUrl = https://m3jgw8usfi.execute-api.us-east-1.amazonaws.com/prod
 
 # ─── Variables ───────────────────────────────────
 @token =
