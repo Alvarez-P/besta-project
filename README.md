@@ -119,7 +119,7 @@ Consulta `endpoints.http` para ejemplos completos de cada request.
 |--------|------|------|-------------|
 | `GET` | `/health` | No | Estado de la API y base de datos |
 | `POST` | `/auth/login` | No | Inicio de sesión, devuelve JWT |
-| `POST` | `/users` | No | Registrar usuario |
+| `POST` | `/users` | Si | Registrar usuario |
 | `GET` | `/users` | Sí | Listar usuarios (paginado, filtrable) |
 | `GET` | `/users/:id` | Sí | Obtener usuario por ID |
 | `PUT` | `/users/:id` | Sí | Actualizar usuario |

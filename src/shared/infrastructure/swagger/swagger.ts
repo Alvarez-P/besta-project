@@ -211,7 +211,9 @@ export const swaggerDefinition = {
       post: {
         tags: ['Users'],
         summary: 'Create user',
-        description: 'Register a new user. A welcome email is sent after successful registration.',
+        description:
+          'Register a new user. Requires authentication. A welcome email is sent after successful registration.',
+        security: [{ bearerAuth: [] }],
         parameters: [{ $ref: '#/components/parameters/idempotencyKey' }],
         requestBody: {
           required: true,

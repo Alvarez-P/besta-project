@@ -21,7 +21,7 @@ export function registerUserRoutes(app: Router, uow: UnitOfWork, sesBreaker?: Ci
   const updateUserUseCase = new UpdateUserUseCase(uow, sesBreaker);
   const deleteUserUseCase = new DeleteUserUseCase(uow);
 
-  app.post('/users', validate(createUserSchema), async (req, res, next) => {
+  app.post('/users', authGuard, validate(createUserSchema), async (req, res, next) => {
     try {
       const user = await createUserUseCase.execute(req.body);
       success(res, user, 201);
