@@ -17,7 +17,7 @@ export async function createApp(): Promise<express.Application> {
   app.use(express.json());
 
   app.use(
-    '/api-docs',
+    '/prod/api-docs',
     swaggerUi.serve,
     swaggerUi.setup(swaggerDefinition, {
       customSiteTitle: 'Besta API Docs',

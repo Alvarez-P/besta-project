@@ -14,7 +14,7 @@ export class BestaStack extends cdk.Stack {
     super(scope, id, props);
 
     const env = this.node.tryGetContext('environment') || 'dev';
-    const rdsAllowedIp = this.node.tryGetContext('rds-allowed-ip') as string | undefined;
+    const rdsAllowedIp = this.node.tryGetContext('rds-allowed-ip') as string[] | undefined;
 
     // -----------------------------------------------------------------------
     // VPC
@@ -52,7 +52,9 @@ export class BestaStack extends cdk.Stack {
     });
     rdsSg.addIngressRule(lambdaSg, ec2.Port.tcp(3306), 'Allow Lambda access to RDS');
     if (rdsAllowedIp) {
-      rdsSg.addIngressRule(ec2.Peer.ipv4(rdsAllowedIp), ec2.Port.tcp(3306), 'Allow DBeaver access');
+      rdsAllowedIp.forEach((ip, index) => {
+        rdsSg.addIngressRule(ec2.Peer.ipv4(ip), ec2.Port.tcp(3306), `Allow DBeaver access ${index + 1}`);
+      });
     }
 
     // -----------------------------------------------------------------------
