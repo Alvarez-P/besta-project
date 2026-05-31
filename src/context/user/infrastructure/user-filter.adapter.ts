@@ -10,7 +10,7 @@ export interface UserFilter {
 
 export function buildUserFilter(query: QueryUserDto): UserFilter {
   const limit = query.limit || 20;
-  const offset = ((query.page || 1) - 1) * limit;
+  const offset = query.offset || 0;
 
   const where: WhereOptions<any> = {};
 
