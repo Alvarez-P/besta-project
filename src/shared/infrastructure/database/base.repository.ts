@@ -25,6 +25,10 @@ export abstract class BaseRepository<T extends Model> implements Repository<T> {
     return this.model.findAll({ transaction: this.transaction, ...options });
   }
 
+  findAndCount(options?: FindOptions<Attributes<T>>): Promise<{ rows: T[]; count: number }> {
+    return this.model.findAndCountAll({ transaction: this.transaction, ...options });
+  }
+
   findOne(options?: FindOptions<Attributes<T>>): Promise<T | null> {
     return this.model.findOne({ transaction: this.transaction, ...options });
   }

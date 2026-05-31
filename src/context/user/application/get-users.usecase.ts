@@ -14,7 +14,7 @@ export class GetUsersUseCase {
     const filter = buildUserFilter(query);
     const repo = new UserRepository();
 
-    const { rows, count } = await repo.model.findAndCountAll({
+    const { rows, count } = await repo.findAndCount({
       where: filter.where,
       limit: filter.limit,
       offset: filter.offset,
