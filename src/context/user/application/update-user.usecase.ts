@@ -1,6 +1,8 @@
 import { PasswordService } from '../../../shared/infrastructure/crypto/password.service';
 import type { UnitOfWork } from '../../../shared/infrastructure/database/unit-of-work';
 import { NotFoundError } from '../../../shared/infrastructure/errors/http.errors';
+import { NotificationService } from '../../../shared/infrastructure/mail/notification.service';
+import { SesAdapter } from '../../../shared/infrastructure/mail/ses.adapter';
 import { UserEmail } from '../domain/email.vo';
 import type { User } from '../domain/user.entity';
 import { UserService } from '../domain/user.service';
@@ -10,6 +12,7 @@ import type { UpdateUserDto } from './dtos/update-user.dto';
 export class UpdateUserUseCase {
   private readonly userService = new UserService();
   private readonly passwordService = new PasswordService();
+  private readonly notificationService = new NotificationService(new SesAdapter());
 
   constructor(private readonly uow: UnitOfWork) {}
 
@@ -21,11 +24,12 @@ export class UpdateUserUseCase {
       if (!existing) {
         throw new NotFoundError(`User with id "${id}" not found`);
       }
-
+      let emailChanged = false;
       if (dto.email) {
         const normalizedEmail = dto.email.trim().toLowerCase();
         if (normalizedEmail !== existing.email) {
           await this.userService.ensureEmailIsUnique(normalizedEmail, repo);
+          emailChanged = true;
         }
       }
 
@@ -45,6 +49,12 @@ export class UpdateUserUseCase {
       }
 
       const updated = await repo.findOne({ where: { id } });
+
+      if (emailChanged) {
+        this.notificationService.sendUpdateEmail(updated!).catch((err) => {
+          console.error('Failed to send update email:', err);
+        });
+      }
 
       return {
         id: updated!.id,

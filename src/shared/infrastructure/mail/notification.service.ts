@@ -13,4 +13,14 @@ export class NotificationService {
 
     await this.sesAdapter.sendEmail(email);
   }
+
+  async sendUpdateEmail(user: User): Promise<void> {
+    const email = {
+      to: user.email.toString(),
+      subject: 'Your email has been updated',
+      body: `Hi ${user.name},\n\nYour account information has been updated successfully.\n\nBest regards.\nBesta Team`,
+    };
+
+    await this.sesAdapter.sendEmail(email);
+  }
 }
