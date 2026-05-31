@@ -4,7 +4,7 @@ import { BestaStack } from '../lib/besta-stack';
 const app = new cdk.App();
 const env = app.node.tryGetContext('environment') || 'dev';
 
-new BestaStack(app, `BestaStack-${env}`, {
+new BestaStack(app, `BestaProjectStack-${env}`, {
   env: {
     account: process.env.CDK_DEFAULT_ACCOUNT,
     region: process.env.CDK_DEFAULT_REGION,
