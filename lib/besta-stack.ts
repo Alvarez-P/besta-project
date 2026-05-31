@@ -1,4 +1,3 @@
-import { randomBytes } from 'node:crypto';
 import * as path from 'node:path';
 import * as cdk from 'aws-cdk-lib';
 import * as apigw from 'aws-cdk-lib/aws-apigateway';
@@ -112,7 +111,6 @@ export class BestaStack extends cdk.Stack {
     // Lambda Function (Express API)
     // -----------------------------------------------------------------------
     const SES_TO_EMAIL = ['alvarez.pacheco.a.e@gmail.com', 'aeap19980929@gmail.com', 'besta-test@mailinator.com'];
-    const adminPassword = randomBytes(12).toString('base64').replace(/[/+=]/g, 'x');
 
     const environment: Record<string, string> = {
       DB_NAME: 'besta',
@@ -123,7 +121,7 @@ export class BestaStack extends cdk.Stack {
       IDEMPOTENCY_TABLE_NAME: idempotencyTable.tableName,
       ADMIN_EMAIL: SES_TO_EMAIL[0],
       ADMIN_NAME: 'Admin',
-      ADMIN_PASSWORD: adminPassword,
+      ADMIN_PASSWORD: 'dUEgFsq5HxoFHtxR',
     };
     const apiLambda = new NodejsFunction(this, 'ApiLambda', {
       entry: path.join(process.cwd(), 'src', 'index.ts'),
@@ -190,8 +188,8 @@ export class BestaStack extends cdk.Stack {
     });
 
     new cdk.CfnOutput(this, 'AdminPassword', {
-      value: adminPassword,
-      description: 'Plain text admin password for first login (generated at synth time)',
+      value: environment.ADMIN_PASSWORD,
+      description: 'Plain text admin password for first login',
     });
 
     if (sesIdentity) {
