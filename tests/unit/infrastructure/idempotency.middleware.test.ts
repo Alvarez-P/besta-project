@@ -2,6 +2,7 @@
 
 import type { NextFunction, Request, Response } from 'express';
 import { CircuitBreaker, CircuitState } from '../../../src/shared/infrastructure/circuit-breaker';
+import { ServiceUnavailableError } from '../../../src/shared/infrastructure/errors/service-unavailable.error';
 import { idempotency } from '../../../src/shared/infrastructure/idempotency/idempotency.middleware';
 import { IdempotencyRepository } from '../../../src/shared/infrastructure/idempotency/idempotency.repository';
 
@@ -143,6 +144,36 @@ describe('idempotency middleware', () => {
   it('does not apply idempotency to DELETE by default', async () => {
     const middleware = idempotency();
     const req = mockReq('DELETE', 'del-key');
+    const res = mockRes();
+    const next = getNext();
+
+    await middleware(req, res, next);
+
+    expect(next).toHaveBeenCalledWith();
+  });
+
+  it('returns 503 ServiceUnavailableError early when any circuit breaker is OPEN', async () => {
+    const openBreaker = new CircuitBreaker({ failureThreshold: 1 });
+    await expect(openBreaker.execute(() => Promise.reject(new Error('fail')))).rejects.toThrow('fail');
+    expect(openBreaker.currentState).toBe(CircuitState.OPEN);
+
+    const middleware = idempotency({ circuitBreakers: [openBreaker] });
+    const req = mockReq('POST', 'new-key');
+    const res = mockRes();
+    const next = getNext();
+
+    await middleware(req, res, next);
+
+    expect(next).toHaveBeenCalledWith(expect.any(ServiceUnavailableError));
+    expect(res.json).not.toHaveBeenCalled();
+  });
+
+  it('passes through when all circuit breakers are CLOSED', async () => {
+    const closedBreaker = new CircuitBreaker();
+    expect(closedBreaker.currentState).toBe(CircuitState.CLOSED);
+
+    const middleware = idempotency({ circuitBreakers: [closedBreaker] });
+    const req = mockReq('POST', 'key-pass');
     const res = mockRes();
     const next = getNext();
 

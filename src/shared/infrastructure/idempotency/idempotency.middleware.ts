@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from 'express';
 import type { CircuitBreaker } from '../circuit-breaker';
 import { CircuitState } from '../circuit-breaker';
+import { ServiceUnavailableError } from '../errors/service-unavailable.error';
 import { IdempotencyRepository } from './idempotency.repository';
 
 export interface IdempotencyOptions {
@@ -34,12 +35,19 @@ export function idempotency(options: IdempotencyOptions = {}) {
       return next();
     }
 
+    const anyOpen = circuitBreakers.some((cb) => cb.currentState === CircuitState.OPEN);
+
+    if (anyOpen) {
+      next(new ServiceUnavailableError());
+      return;
+    }
+
     const originalJson = res.json.bind(res);
 
     res.json = (body: unknown) => {
-      const anyOpen = circuitBreakers.some((cb) => cb.currentState === CircuitState.OPEN);
+      const openAfterProcessing = circuitBreakers.some((cb) => cb.currentState === CircuitState.OPEN);
 
-      if (!anyOpen) {
+      if (!openAfterProcessing) {
         repo.save(key, body, res.statusCode, ttlSeconds).catch((err) => {
           console.error('Failed to store idempotency key:', err);
         });
