@@ -252,14 +252,14 @@ export const swaggerDefinition = {
       get: {
         tags: ['Users'],
         summary: 'List users',
-        description: 'Returns a paginated list of users. Supports filtering by name (LIKE). Requires authentication.',
+        description: 'Returns a paginated list of users. Supports filtering by name (LIKE) and offset-based pagination. Requires authentication.',
         security: [{ bearerAuth: [] }],
         parameters: [
           {
-            name: 'page',
+            name: 'offset',
             in: 'query',
-            schema: { type: 'integer', minimum: 1, default: 1 },
-            description: 'Page number',
+            schema: { type: 'integer', minimum: 0, default: 0 },
+            description: 'Number of items to skip',
           },
           {
             name: 'limit',
