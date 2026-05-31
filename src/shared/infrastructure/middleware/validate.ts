@@ -20,6 +20,7 @@ export function validate(schema: ZodSchema) {
     }
 
     req.body = (result.data as any).body ?? req.body;
+    req.query = (result.data as any).query ?? req.query;
     next();
   };
 }
