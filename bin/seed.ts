@@ -60,20 +60,30 @@ export const handler = async (
       database: 'besta',
     });
 
-    const id = randomUUID();
+    await conn.execute(`CREATE TABLE IF NOT EXISTS users (
+      id VARCHAR(36) NOT NULL PRIMARY KEY,
+      name VARCHAR(255) NOT NULL,
+      email VARCHAR(255) NOT NULL UNIQUE,
+      password VARCHAR(255) NOT NULL,
+      createdAt DATETIME NOT NULL,
+      updatedAt DATETIME NOT NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`);
 
     await conn.execute(
       'INSERT IGNORE INTO users (id, name, email, password, createdAt, updatedAt) VALUES (?, ?, ?, ?, NOW(), NOW())',
-      [id, adminName, adminEmail, hashed],
+      [randomUUID(), adminName, adminEmail, hashed],
     );
+
+    const [rows] = (await conn.execute('SELECT id FROM users WHERE email = ?', [adminEmail])) as any;
+    const userId = rows?.[0]?.id;
 
     await conn.end();
 
-    console.log(`Admin user created: ${adminEmail} (id: ${id})`);
+    console.log(`Admin user ready: ${adminEmail} (id: ${userId})`);
 
     return {
       Status: 'SUCCESS',
-      PhysicalResourceId: id,
+      PhysicalResourceId: userId || randomUUID(),
       StackId: event.StackId,
       RequestId: event.RequestId,
       LogicalResourceId: event.LogicalResourceId,
