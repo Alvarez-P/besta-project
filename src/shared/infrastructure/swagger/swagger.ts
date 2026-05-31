@@ -7,7 +7,7 @@ export const swaggerDefinition = {
   },
   servers: [
     {
-      url: '/',
+      url: '/prod',
       description: 'API Gateway proxy',
     },
   ],
